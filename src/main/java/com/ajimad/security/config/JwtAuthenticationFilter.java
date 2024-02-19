@@ -23,6 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // JwtAuthenticationFilter act as an entry point for securing your application with JWT-Based authentication,
     // allowing only request with valid token to proceed and access protected resources.
 
+    // this custom filter is basically used to intercept request, extract JWT validate it, and set the authentication
+    // in the security context.
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 

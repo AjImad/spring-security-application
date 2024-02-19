@@ -38,9 +38,12 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // The authentication provider is responsible for verifying the user credentials and creating Authentication object
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+        // the configured HttpSecurity is built into a SecurityFilterChain and returned. This SecurityFilterChain
+        // is what spring security use to apply the security configuration.
     }
 
 }

@@ -1,5 +1,7 @@
 package com.ajimad.security.config;
 
+import com.ajimad.security.token.Token;
+import com.ajimad.security.token.TokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +16,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor //
@@ -28,6 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final TokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(
@@ -49,8 +54,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
             // Load the actual user from the database by username (userEmail)
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+            // Check if the generated user token that is stored in Token table is not expired or revoked
+            boolean isTokenValid = tokenRepository.findByToken(jwt)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+
             // Check if the JWT is a valid token
-            if(jwtService.isTokenValid(jwt, userDetails)){
+            if(jwtService.isTokenValid(jwt, userDetails) && isTokenValid){
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,

@@ -41,6 +41,31 @@ public class AuthenticationService {
                 .build();
     }
 
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                request.getEmail(),
+                request.getPassword()
+        ));
+        // once the user's credential is validated then the user is considered as authenticated.
+        var user = repository.findUserByEmail(request.getEmail()).orElseThrow();
+        revokeAllTokens(user.getId());
+        var jwtToken = jwtService.generateToken(user);
+        saveUserToken(user, jwtToken);
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .build();
+    }
+
+    private void revokeAllTokens (Integer userId) {
+        var tokens = tokenRepository.findAllValidTokensByUser(userId);
+        if(tokens.isEmpty()) return;
+
+        tokens.forEach(t -> {
+            t.setRevoked(true);
+            t.setExpired(true);
+        });
+    }
+
     private void saveUserToken(User user, String jwtToken) {
         var token = Token.builder()
                 .user(user)
@@ -50,19 +75,5 @@ public class AuthenticationService {
                 .revoked(false)
                 .build();
         tokenRepository.save(token);
-    }
-
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                request.getEmail(),
-                request.getPassword()
-        ));
-        // once the user's credential is validated then the user is considered as authenticated.
-        var user = repository.findUserByEmail(request.getEmail()).orElseThrow();
-        var jwtToken = jwtService.generateToken(user);
-        saveUserToken(user, jwtToken);
-        return AuthenticationResponse.builder()
-                .token(jwtToken)
-                .build();
     }
 }

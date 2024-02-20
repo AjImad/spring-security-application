@@ -1,5 +1,6 @@
 package com.ajimad.security.user;
 
+import com.ajimad.security.token.Token;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,9 @@ public class User implements UserDetails {
     // Enumerated is used to specify how an enum type is mapped to a database
     @Enumerated(EnumType.STRING) // with this approach, the enums values are stored as strings, where string value is the name of the enum as declared in the enum type.
     private Role role;
+
+    @OneToMany(mappedBy = "user")
+    private List<Token> tokens;
 
     // getAuthorities return a list of roles
     @Override

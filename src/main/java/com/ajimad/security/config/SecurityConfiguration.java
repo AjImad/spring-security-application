@@ -9,8 +9,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 @Configuration
 @EnableWebSecurity //
@@ -25,6 +27,8 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthFilter;
     // NOTE: AuthenticationProvider bean defined in ApplicationConfig file
     private final AuthenticationProvider authenticationProvider;
+    // Spring will automatically will detect the implementation of LogoutHandler which is LogoutService
+    private final LogoutHandler logoutHandler;
 
 
     @Bean
@@ -38,7 +42,12 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // The authentication provider is responsible for verifying the user credentials and creating Authentication object
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout ->
+                        logout.logoutUrl("/api/auth/logout")
+                        .addLogoutHandler(logoutHandler) // Custom logout handler that is responsible for logout the user upon accessing /api/auth/logout endpoint
+                        .logoutSuccessHandler(((request, response, authentication) -> SecurityContextHolder.clearContext()))
+                );
         return http.build();
         // the configured HttpSecurity is built into a SecurityFilterChain and returned. This SecurityFilterChain
         // is what spring security use to apply the security configuration.
